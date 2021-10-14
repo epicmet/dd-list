@@ -47,6 +47,31 @@ function SyncBinding(
   };
 }
 
+class ProjectList {
+  templateEl: HTMLTemplateElement;
+  rootEl: HTMLDivElement;
+  sectionEl: HTMLElement;
+
+  constructor(private type: "active" | "finished") {
+    this.templateEl = document.getElementById(
+      "project-list"
+    )! as HTMLTemplateElement;
+    this.rootEl = document.getElementById("app")! as HTMLDivElement;
+
+    const importedNode = document.importNode(this.templateEl.content, true);
+    this.sectionEl = importedNode.firstElementChild as HTMLElement;
+    this.sectionEl.id = `${this.type}-projects`;
+
+    // Injecting
+    this.rootEl.insertAdjacentElement("beforeend", this.sectionEl);
+
+    // Rendering
+    this.sectionEl.querySelector("ul")!.id = `${type}-projects-list`;
+    this.sectionEl.querySelector("h2")!.textContent =
+      this.type.toUpperCase() + " PROJECTS";
+  }
+}
+
 class ProjectInput {
   templateEl: HTMLTemplateElement;
   rootEl: HTMLDivElement;
@@ -117,3 +142,5 @@ class ProjectInput {
 }
 
 const projInput = new ProjectInput();
+const activeProjList = new ProjectList("active");
+const finishedProjList = new ProjectList("finished");
