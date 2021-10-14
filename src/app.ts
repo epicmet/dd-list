@@ -1,3 +1,15 @@
+// Drag and Drop interface
+interface Draggable {
+  dragStartHandler(event: DragEvent): void;
+  dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+  dragOverHandler(event: DragEvent): void;
+  dropHandler(event: DragEvent): void;
+  dragLeaveHandler(event: DragEvent): void;
+}
+
 enum ProjectStatus {
   Active,
   Finished,
@@ -137,7 +149,10 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   }
 }
 
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
+class ProjectItem
+  extends Component<HTMLUListElement, HTMLLIElement>
+  implements Draggable
+{
   private project: Project;
 
   get peopleAmount() {
@@ -149,19 +164,43 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
     super("single-project", listId, false, project.id);
     this.project = project;
 
+    // Drag Listeners
+    this.mainEl.addEventListener("dragstart", this.dragStartHandler);
+    this.mainEl.addEventListener("dragend", this.dragEndHandler);
+
     // Rendering
     this.mainEl.querySelector("h2")!.textContent = this.project.title;
     this.mainEl.querySelector("h3")!.textContent =
       this.peopleAmount + " assigned";
     this.mainEl.querySelector("p")!.textContent = this.project.description;
   }
+
+  @SyncBinding
+  dragStartHandler(event: DragEvent) {
+    console.log("drag start");
+    console.log(event);
+  }
+
+  @SyncBinding
+  dragEndHandler(event: DragEvent) {
+    console.log("drag end");
+    console.log(event);
+  }
 }
 
-class ProjectList extends Component<HTMLDivElement, HTMLElement> {
+class ProjectList
+  extends Component<HTMLDivElement, HTMLElement>
+  implements DragTarget
+{
   assingedProjects: Project[] = [];
 
   constructor(private type: "active" | "finished") {
     super("project-list", "app", false, `${type}-projects`);
+
+    // Drag Listeners
+    this.mainEl.addEventListener("dragover", this.dragOverHandler);
+    this.mainEl.addEventListener("dragleave", this.dragLeaveHandler);
+    this.mainEl.addEventListener("drop", this.dropHandler);
 
     // Subscribing to state of project
     state.addSubscriber((projects: Project[]) => {
@@ -191,6 +230,20 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> {
     for (const prj of this.assingedProjects) {
       new ProjectItem(this.mainEl.querySelector("ul")!.id, prj);
     }
+  }
+
+  @SyncBinding
+  dragOverHandler(_: DragEvent) {
+    const listEl = this.mainEl.querySelector("ul")!;
+    listEl.classList.add("droppable");
+  }
+
+  dropHandler(_: DragEvent) {}
+
+  @SyncBinding
+  dragLeaveHandler(_: DragEvent) {
+    const listEl = this.mainEl.querySelector("ul")!;
+    listEl.classList.remove("droppable");
   }
 }
 
