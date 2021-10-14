@@ -1,8 +1,25 @@
+enum ProjectStatus {
+  Active,
+  Finished,
+}
+
+class Project {
+  constructor(
+    public id: string,
+    public title: string,
+    public description: string,
+    public people: number,
+    public status: ProjectStatus
+  ) {}
+}
+
 // State management
+type Listener = (item: Project[]) => void;
+
 class ProjectState {
   private static instance: ProjectState;
-  private projects: any[];
-  private subscribers: any[];
+  private projects: Project[];
+  private subscribers: Listener[];
 
   private constructor() {
     this.projects = [];
@@ -25,17 +42,18 @@ class ProjectState {
   }
 
   addProject(title: string, description: string, people: number) {
-    const newProject = {
-      id: Date.now().toString(),
+    const newProject = new Project(
+      Date.now().toString(),
       title,
       description,
       people,
-    };
+      ProjectStatus.Active
+    );
     this.projects.push(newProject);
     this.callSubscribersFunctions();
   }
 
-  addSubscriber(listenerFn: Function) {
+  addSubscriber(listenerFn: Listener) {
     this.subscribers.push(listenerFn);
   }
 }
@@ -95,7 +113,7 @@ class ProjectList {
   templateEl: HTMLTemplateElement;
   rootEl: HTMLDivElement;
   sectionEl: HTMLElement;
-  assingedProjects: any[] = [];
+  assingedProjects: Project[] = [];
 
   constructor(private type: "active" | "finished") {
     this.templateEl = document.getElementById(
@@ -108,7 +126,7 @@ class ProjectList {
     this.sectionEl.id = `${this.type}-projects`;
 
     // Subscribing to state of project
-    state.addSubscriber((projects: any) => {
+    state.addSubscriber((projects: Project[]) => {
       this.assingedProjects = projects;
       this.renderProjects();
     });
