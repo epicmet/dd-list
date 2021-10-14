@@ -127,7 +127,11 @@ class ProjectList {
 
     // Subscribing to state of project
     state.addSubscriber((projects: Project[]) => {
-      this.assingedProjects = projects;
+      this.assingedProjects = projects.filter((prj) => {
+        if (this.type === "active") return prj.status === ProjectStatus.Active;
+        else return prj.status === ProjectStatus.Finished;
+      });
+
       this.renderProjects();
     });
 
