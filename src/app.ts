@@ -68,6 +68,14 @@ class ProjectState {
   addSubscriber(listenerFn: Listener) {
     this.subscribers.push(listenerFn);
   }
+
+  switchProject(projectId: string, newStatus: ProjectStatus) {
+    const project = this.projects.find((el) => el.id === projectId);
+    if (project && project.status !== newStatus) {
+      project.status = newStatus;
+      this.callSubscribersFunctions();
+    }
+  }
 }
 
 const state = ProjectState.getInstance();
@@ -177,14 +185,13 @@ class ProjectItem
 
   @SyncBinding
   dragStartHandler(event: DragEvent) {
-    console.log("drag start");
-    console.log(event);
+    event.dataTransfer!.setData("text/plain", this.project.id);
+    event.dataTransfer!.effectAllowed = "move";
   }
 
   @SyncBinding
-  dragEndHandler(event: DragEvent) {
+  dragEndHandler(_: DragEvent) {
     console.log("drag end");
-    console.log(event);
   }
 }
 
@@ -233,12 +240,23 @@ class ProjectList
   }
 
   @SyncBinding
-  dragOverHandler(_: DragEvent) {
-    const listEl = this.mainEl.querySelector("ul")!;
-    listEl.classList.add("droppable");
+  dragOverHandler(event: DragEvent) {
+    if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
+      event.preventDefault();
+
+      const listEl = this.mainEl.querySelector("ul")!;
+      listEl.classList.add("droppable");
+    }
   }
 
-  dropHandler(_: DragEvent) {}
+  @SyncBinding
+  dropHandler(event: DragEvent) {
+    const projecId = event.dataTransfer!.getData("text/plain");
+    state.switchProject(
+      projecId,
+      this.type === "active" ? ProjectStatus.Active : ProjectStatus.Finished
+    );
+  }
 
   @SyncBinding
   dragLeaveHandler(_: DragEvent) {
