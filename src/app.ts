@@ -1,3 +1,47 @@
+// State management
+class ProjectState {
+  private static instance: ProjectState;
+  private projects: any[];
+  private subscribers: any[];
+
+  private constructor() {
+    this.projects = [];
+    this.subscribers = [];
+  }
+
+  static getInstance() {
+    if (this.instance) {
+      return this.instance;
+    } else {
+      this.instance = new ProjectState();
+      return this.instance;
+    }
+  }
+
+  private callSubscribersFunctions() {
+    for (const fn of this.subscribers) {
+      fn(this.projects.slice());
+    }
+  }
+
+  addProject(title: string, description: string, people: number) {
+    const newProject = {
+      id: Date.now().toString(),
+      title,
+      description,
+      people,
+    };
+    this.projects.push(newProject);
+    this.callSubscribersFunctions();
+  }
+
+  addSubscriber(listenerFn: Function) {
+    this.subscribers.push(listenerFn);
+  }
+}
+
+const state = ProjectState.getInstance();
+
 // Validation
 interface ValidationObj {
   value: string | number;
@@ -51,6 +95,7 @@ class ProjectList {
   templateEl: HTMLTemplateElement;
   rootEl: HTMLDivElement;
   sectionEl: HTMLElement;
+  assingedProjects: any[] = [];
 
   constructor(private type: "active" | "finished") {
     this.templateEl = document.getElementById(
@@ -62,6 +107,12 @@ class ProjectList {
     this.sectionEl = importedNode.firstElementChild as HTMLElement;
     this.sectionEl.id = `${this.type}-projects`;
 
+    // Subscribing to state of project
+    state.addSubscriber((projects: any) => {
+      this.assingedProjects = projects;
+      this.renderProjects();
+    });
+
     // Injecting
     this.rootEl.insertAdjacentElement("beforeend", this.sectionEl);
 
@@ -69,6 +120,22 @@ class ProjectList {
     this.sectionEl.querySelector("ul")!.id = `${type}-projects-list`;
     this.sectionEl.querySelector("h2")!.textContent =
       this.type.toUpperCase() + " PROJECTS";
+  }
+
+  private renderProjects() {
+    const list = document.getElementById(
+      `${this.type}-projects-list`
+    )! as HTMLUListElement;
+
+    // Cleaning for rerender
+    list.innerHTML = "";
+
+    // Render list items
+    for (const prj of this.assingedProjects) {
+      const liEl = document.createElement("li");
+      liEl.textContent = prj.title;
+      list.appendChild(liEl);
+    }
   }
 }
 
@@ -135,8 +202,8 @@ class ProjectInput {
     const userInput = this.getFormInfo();
     if (Array.isArray(userInput)) {
       const [title, desc, people] = userInput;
+      state.addProject(title, desc, people);
       this.clearInputs();
-      console.log(title, desc, people);
     }
   }
 }
