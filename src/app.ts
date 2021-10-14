@@ -109,21 +109,39 @@ function SyncBinding(
   };
 }
 
-class ProjectList {
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   templateEl: HTMLTemplateElement;
-  rootEl: HTMLDivElement;
-  sectionEl: HTMLElement;
+  targetEl: T;
+  mainEl: U;
+
+  constructor(
+    templateId: string,
+    targetId: string,
+    insertAtStart: boolean,
+    newElementId?: string
+  ) {
+    this.templateEl = document.getElementById(
+      templateId
+    )! as HTMLTemplateElement;
+    this.targetEl = document.getElementById(targetId)! as T;
+
+    const importedNode = document.importNode(this.templateEl.content, true);
+    this.mainEl = importedNode.firstElementChild as U;
+
+    if (newElementId) this.mainEl.id = newElementId;
+
+    this.targetEl.insertAdjacentElement(
+      insertAtStart ? "afterbegin" : "beforeend",
+      this.mainEl
+    );
+  }
+}
+
+class ProjectList extends Component<HTMLDivElement, HTMLElement> {
   assingedProjects: Project[] = [];
 
   constructor(private type: "active" | "finished") {
-    this.templateEl = document.getElementById(
-      "project-list"
-    )! as HTMLTemplateElement;
-    this.rootEl = document.getElementById("app")! as HTMLDivElement;
-
-    const importedNode = document.importNode(this.templateEl.content, true);
-    this.sectionEl = importedNode.firstElementChild as HTMLElement;
-    this.sectionEl.id = `${this.type}-projects`;
+    super("project-list", "app", false, `${type}-projects`);
 
     // Subscribing to state of project
     state.addSubscriber((projects: Project[]) => {
@@ -135,12 +153,9 @@ class ProjectList {
       this.renderProjects();
     });
 
-    // Injecting
-    this.rootEl.insertAdjacentElement("beforeend", this.sectionEl);
-
     // Rendering
-    this.sectionEl.querySelector("ul")!.id = `${type}-projects-list`;
-    this.sectionEl.querySelector("h2")!.textContent =
+    this.mainEl.querySelector("ul")!.id = `${type}-projects-list`;
+    this.mainEl.querySelector("h2")!.textContent =
       this.type.toUpperCase() + " PROJECTS";
   }
 
@@ -161,37 +176,24 @@ class ProjectList {
   }
 }
 
-class ProjectInput {
-  templateEl: HTMLTemplateElement;
-  rootEl: HTMLDivElement;
-  formEl: HTMLFormElement;
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   titleInputEl: HTMLInputElement;
   descriptionInputEl: HTMLInputElement;
   peopleInputEl: HTMLInputElement;
 
   constructor() {
-    this.templateEl = document.getElementById(
-      "project-input"
-    )! as HTMLTemplateElement;
-    this.rootEl = document.getElementById("app")! as HTMLDivElement;
+    super("project-input", "app", true, "user-input");
 
-    const importedNode = document.importNode(this.templateEl.content, true);
-    this.formEl = importedNode.firstElementChild as HTMLFormElement;
-    this.formEl.id = "user-input";
-
-    this.titleInputEl = this.formEl.querySelector("#title") as HTMLInputElement;
-    this.descriptionInputEl = this.formEl.querySelector(
+    this.titleInputEl = this.mainEl.querySelector("#title") as HTMLInputElement;
+    this.descriptionInputEl = this.mainEl.querySelector(
       "#description"
     ) as HTMLInputElement;
-    this.peopleInputEl = this.formEl.querySelector(
+    this.peopleInputEl = this.mainEl.querySelector(
       "#people"
     ) as HTMLInputElement;
 
     // Submit Listener
-    this.formEl.addEventListener("submit", this.submitHandler);
-
-    // Injecting
-    this.rootEl.insertAdjacentElement("afterbegin", this.formEl);
+    this.mainEl.addEventListener("submit", this.submitHandler);
   }
 
   private clearInputs() {
