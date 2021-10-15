@@ -243,6 +243,7 @@ class ProjectList
   dragOverHandler(event: DragEvent) {
     if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
       event.preventDefault();
+      event.stopPropagation();
 
       const listEl = this.mainEl.querySelector("ul")!;
       listEl.classList.add("droppable");
@@ -251,6 +252,9 @@ class ProjectList
 
   @SyncBinding
   dropHandler(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
     const projecId = event.dataTransfer!.getData("text/plain");
     state.switchProject(
       projecId,
@@ -259,7 +263,10 @@ class ProjectList
   }
 
   @SyncBinding
-  dragLeaveHandler(_: DragEvent) {
+  dragLeaveHandler(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
     const listEl = this.mainEl.querySelector("ul")!;
     listEl.classList.remove("droppable");
   }
