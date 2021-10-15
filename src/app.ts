@@ -298,21 +298,35 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
     this.peopleInputEl.value = "";
   }
 
+  private removeErrorClass() {
+    document.querySelector("#title")!.classList.remove("input-error");
+    document.querySelector("#description")!.classList.remove("input-error");
+    document.querySelector("#people")!.classList.remove("input-error");
+  }
+
   private getFormInfo(): [string, string, number] | void {
+    this.removeErrorClass();
+
     const titleVal = this.titleInputEl.value;
     const descVal = this.descriptionInputEl.value;
     const peopleVal = this.peopleInputEl.value;
 
-    if (
-      validate({ value: titleVal, required: true }) &&
-      validate({ value: descVal, required: true, minLength: 5 }) &&
-      validate({ value: +peopleVal, required: true, min: 1, max: 5 })
-    ) {
-      return [titleVal, descVal, +peopleVal];
-    } else {
-      alert("Invalid input");
+    if (!validate({ value: titleVal, required: true })) {
+      document.querySelector("#title")!.classList.add("input-error");
       return;
     }
+
+    if (!validate({ value: descVal, required: true, minLength: 5 })) {
+      document.querySelector("#description")!.classList.add("input-error");
+      return;
+    }
+
+    if (!validate({ value: peopleVal, required: true, min: 1, max: 10 })) {
+      document.querySelector("#people")!.classList.add("input-error");
+      return;
+    }
+
+    return [titleVal, descVal, +peopleVal];
   }
 
   @SyncBinding
